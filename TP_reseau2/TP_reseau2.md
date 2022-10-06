@@ -48,16 +48,6 @@ Type : 0 (echo (ping) reply)
 
 # II. ARP my bro
 
-ARP permet, pour rappel, de résoudre la situation suivante :
-
-- pour communiquer avec quelqu'un dans un LAN, il **FAUT** connaître son adresse MAC
-- on admet un PC1 et un PC2 dans le même LAN :
-  - PC1 veut joindre PC2
-  - PC1 et PC2 ont une IP correctement définie
-  - PC1 a besoin de connaître la MAC de PC2 pour lui envoyer des messages
-  - **dans cette situation, PC1 va utilise le protocole ARP pour connaître la MAC de PC2**
-  - une fois que PC1 connaît la mac de PC2, il l'enregistre dans sa **table ARP**
-
 🌞 **Check the ARP table**
 
 Mon cher mate :
@@ -124,9 +114,28 @@ Interface : 192.168.224.1 --- 0x12
 
 [ARP Wireshark](./arp_tp2_reseau.pcapng)
 
+```
+ARP broadcast :
+Source : b4:45:06:a4:5c:76
+Destination : ff:ff:ff:ff:ff:ff
+
+ARP reply :
+Source : 54:05:db:d7:f6:e3
+Destination : b4:45:06:a4:5c:76
+
+Moi : b4:45:06:a4:5c:76
+Mon mate : 54:05:db:d7:f6:e3
+Broadcast : ff:ff:ff:ff:ff:ff
+```
 
 # III. DHCP you too my brooo
 
 🌞 **Wireshark it**
 
 [DORA Wireshark](./dora_tp2_reseau.pcapng)
+
+```
+1 : 10.33.16.198
+2 : 10.33.19.254
+3 : 8.8.8.8
+```
