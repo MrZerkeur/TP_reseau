@@ -151,4 +151,86 @@ PING www.google.com (142.250.201.164) 56(84) bytes of data.
 
 ## III. DHCP
 
-Problème lors du téléchargement du dhcp-client.
+🌞**Sur la machine `john`, vous installerez et configurerez un serveur DHCP**
+
+```
+John :
+sudo dnf install dhcp-server
+
+sudo nano /etc/dhcp/dhcpd.conf
+default-lease-time 900;
+max-lease-time 10800;
+
+authoritative;
+
+subnet 10.3.1.0 netmask 255.255.255.0 {
+range 10.3.1.1 10.3.1.254;
+option routers 10.3.1.254;
+option subnet-mask 255.255.255.0;
+option domain-name-servers 8.8.8.8;
+```
+
+```
+Bob :
+nano /etc/sysconfig/network-scripts/ifcfg-enp0s8
+NAME=enp0s8
+DEVICE=enp0s8
+
+BOOTPROTO=dhcp
+ONBOOT=yes
+
+sudo dnf install dhcp-client
+
+reboot
+```
+
+🌞**Améliorer la configuration du DHCP**
+
+```
+option routers 10.3.1.254;
+option subnet-mask 255.255.255.0;
+option domain-name-servers 8.8.8.8;
+```
+
+```
+dhclient -r
+dhclient
+
+ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:31:c2:af brd ff:ff:ff:ff:ff:ff
+    inet 10.3.1.3/24 brd 10.3.1.255 scope global secondary dynamic enp0s8
+       valid_lft 778sec preferred_lft 778sec
+    inet6 fe80::cc4a:ab8a:dea5:f9f1/64 scope link noprefixroute
+       valid_lft forever preferred_lft forever
+
+ping 10.3.1.254
+PING 10.3.1.254 (10.3.1.254) 56(84) bytes of data.
+64 bytes from 10.3.1.254: icmp_seq=1 ttl=64 time=0.541 ms
+```
+
+```
+ip r s
+default via 10.3.1.254 dev enp0s8 proto dhcp src 10.3.1.2 metric 100
+10.3.1.0/24 dev enp0s8 proto kernel scope link src 10.3.1.2 metric 100
+
+ping 10.3.2.12
+PING 10.3.2.12 (10.3.2.12) 56(84) bytes of data.
+64 bytes from 10.3.2.12: icmp_seq=1 ttl=63 time=1.17 ms
+```
+
+```
+dig www.google.com
+ANSWER SECTION:
+www.google.com.         250     IN      A       216.58.213.68
+
+ping 216.58.213.68
+PING 216.58.213.68 (216.58.213.68) 56(84) bytes of data.
+64 bytes from 216.58.213.68: icmp_seq=1 ttl=247 time=25.7 ms
+```
+
+### 2. Analyse de trames
+
+🌞**Analyse de trames**
+
+[DHCP TP3](./tp3_dhcp.pcap)
