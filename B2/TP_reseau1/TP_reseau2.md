@@ -102,18 +102,86 @@ rtt min/avg/max/mdev = 13.570/13.815/14.060/0.245 ms
 ## 1. DHCP
 
 ☀️ **Sur `dhcp.lan1.tp2`**
-
+```
+[axel@dhcplan1tp1 ~]$ ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:c9:89:14 brd ff:ff:ff:ff:ff:ff
+    inet 10.1.1.253/24 brd 10.1.1.255 scope global noprefixroute enp0s8
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a00:27ff:fec9:8914/64 scope link 
+       valid_lft forever preferred_lft forever
+```
 ```
 [axel@dhcplan1tp1 ~]$ sudo dnf install dhcp-server -y
+```
+```
+[axel@dhcplan1tp1 ~]$ sudo cat /etc/dhcp/dhcpd.conf
+default-lease-time 900;
+max-lease-time 10800;
+
+authoritative;
+
+subnet 10.1.1.0 netmask 255.255.255.0 {
+range 10.1.1.100 10.1.1.200;
+option routers 10.1.1.254;
+option subnet-mask 255.255.255.0;
+option domain-name-servers 1.1.1.1;
+}
+```
+```
+[axel@dhcplan1tp1 ~]$ sudo systemctl status dhcpd
+● dhcpd.service - DHCPv4 Server Daemon
+     Loaded: loaded (/usr/lib/systemd/system/dhcpd.service; enabled; preset: disabled)
+     Active: active (running) since Thu 2023-10-19 20:50:16 CEST; 26min ago
+       Docs: man:dhcpd(8)
+             man:dhcpd.conf(5)
+   Main PID: 780 (dhcpd)
+     Status: "Dispatching packets..."
+      Tasks: 1 (limit: 4604)
+     Memory: 7.1M
+        CPU: 21ms
+     CGroup: /system.slice/dhcpd.service
+             └─780 /usr/sbin/dhcpd -f -cf /etc/dhcp/dhcpd.conf -user dhcpd -group dhcpd --no-pid
+
+Oct 19 20:56:46 dhcplan1tp1 dhcpd[780]: DHCPDISCOVER from 08:00:27:f9:2a:1d (node1lan1tp1) via enp0s8
+Oct 19 20:56:46 dhcplan1tp1 dhcpd[780]: DHCPOFFER on 10.1.1.100 to 08:00:27:f9:2a:1d (node1lan1tp1) via enp0s8
+Oct 19 20:56:46 dhcplan1tp1 dhcpd[780]: DHCPREQUEST for 192.168.56.104 (192.168.56.100) from 08:00:27:f9:2a:1d>
+Oct 19 20:56:46 dhcplan1tp1 dhcpd[780]: DHCPNAK on 192.168.56.104 to 08:00:27:f9:2a:1d via enp0s8
+Oct 19 21:16:21 dhcplan1tp1 dhcpd[780]: DHCPREQUEST for 192.168.56.104 from 08:00:27:f9:2a:1d via enp0s8: wron>
+Oct 19 21:16:21 dhcplan1tp1 dhcpd[780]: DHCPNAK on 192.168.56.104 to 08:00:27:f9:2a:1d via enp0s8
+Oct 19 21:16:21 dhcplan1tp1 dhcpd[780]: DHCPDISCOVER from 08:00:27:f9:2a:1d via enp0s8
+Oct 19 21:16:21 dhcplan1tp1 dhcpd[780]: DHCPREQUEST for 192.168.56.104 (192.168.56.100) from 08:00:27:f9:2a:1d>
+Oct 19 21:16:21 dhcplan1tp1 dhcpd[780]: DHCPNAK on 192.168.56.104 to 08:00:27:f9:2a:1d via enp0s8
+Oct 19 21:16:22 dhcplan1tp1 dhcpd[780]: DHCPOFFER on 10.1.1.100 to 08:00:27:f9:2a:1d (node1lan1tp1) via enp0s8
 ```
 
 ☀️ **Sur `node1.lan1.tp2`**
 
-- demandez une IP au serveur DHCP
-- prouvez que vous avez bien récupéré une IP *via* le DHCP
-- prouvez que vous avez bien récupéré l'IP de la passerelle
-- prouvez que vous pouvez `ping node1.lan2.tp2`
+```
+[axel@node1lan1tp1 ~]$ ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:f9:2a:1d brd ff:ff:ff:ff:ff:ff
+    inet 10.1.1.100/24 brd 10.1.1.255 scope global dynamic noprefixroute enp0s8
+       valid_lft 544sec preferred_lft 544sec
+    inet6 fe80::a00:27ff:fef9:2a1d/64 scope link 
+       valid_lft forever preferred_lft forever
 
+```
+```
+[axel@node1lan1tp1 ~]$ ip r s
+default via 10.1.1.254 dev enp0s8 proto dhcp src 10.1.1.100 metric 100 
+10.1.1.0/24 dev enp0s8 proto kernel scope link src 10.1.1.100 metric 100 
+```
+```
+[axel@node1lan1tp1 ~]$ ping 10.1.2.11
+PING 10.1.2.11 (10.1.2.11) 56(84) bytes of data.
+64 bytes from 10.1.2.11: icmp_seq=1 ttl=63 time=0.755 ms
+64 bytes from 10.1.2.11: icmp_seq=2 ttl=63 time=0.902 ms
+^C
+--- 10.1.2.11 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1015ms
+rtt min/avg/max/mdev = 0.755/0.828/0.902/0.073 ms
+```
 ## 2. Web web web
 
 Un petit serveur web ? Pour la route ?
