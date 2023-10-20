@@ -184,41 +184,119 @@ rtt min/avg/max/mdev = 0.755/0.828/0.902/0.073 ms
 ```
 ## 2. Web web web
 
-Un petit serveur web ? Pour la route ?
-
-On recycle ici, toujours dans un soucis d'économie de ressources, la machine `node2.lan2.tp2` qui devient `web.lan2.tp2`. On va y monter un serveur Web qui mettra à disposition un site web tout nul.
-
----
-
-La conf du serveur web :
-
-- ce sera notre vieil ami NGINX
-- il écoutera sur le port 80, port standard pour du trafic HTTP
-- la racine web doit se trouver dans `/var/www/site_nul/`
-  - vous y créerez un fichier `/var/www/site_nul/index.html` avec le contenu de votre choix
-- vous ajouterez dans la conf NGINX **un fichier dédié** pour servir le site web nul qui se trouve dans `/var/www/site_nul/`
-  - écoute sur le port 80
-  - répond au nom `site_nul.tp2`
-  - sert le dossier `/var/www/site_nul/`
-- n'oubliez pas d'ouvrir le port dans le firewall 🌼
-
----
-
 ☀️ **Sur `web.lan2.tp2`**
 
-- n'oubliez pas de renommer la machine (`node2.lan2.tp2` devient `web.lan2.tp2`)
-- setup du service Web
-  - installation de NGINX
-  - gestion de la racine web `/var/www/site_nul/`
-  - configuration NGINX
-  - service actif
-  - ouverture du port firewall
-- prouvez qu'il y a un programme NGINX qui tourne derrière le port 80 de la machine (commande `ss`)
-- prouvez que le firewall est bien configuré
+```
+[axel@weblan2tp1 ~]$ sudo dnf install nginx -y
+```
+```
+[axel@weblan2tp1 ~]$ sudo cat /etc/nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+include /usr/share/nginx/modules/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 4096;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    server {
+        listen       80;
+        listen       [::]:80;
+        server_name  site_nul.tp2;
+        root         /var/www/site_nul/;
+
+        include /etc/nginx/default.d/*.conf;
+
+        error_page 404 /404.html;
+        location = /404.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+        }
+    }
+}
+```
+```
+[axel@weblan2tp1 ~]$ sudo systemctl status nginx
+● nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: disabled)
+     Active: active (running) since Fri 2023-10-20 11:35:08 CEST; 5min ago
+    Process: 1607 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
+    Process: 1608 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
+    Process: 1609 ExecStart=/usr/sbin/nginx (code=exited, status=0/SUCCESS)
+   Main PID: 1610 (nginx)
+      Tasks: 2 (limit: 4604)
+     Memory: 2.0M
+        CPU: 13ms
+     CGroup: /system.slice/nginx.service
+             ├─1610 "nginx: master process /usr/sbin/nginx"
+             └─1611 "nginx: worker process"
+
+Oct 20 11:35:08 weblan2tp1 systemd[1]: nginx.service: Deactivated successfully.
+Oct 20 11:35:08 weblan2tp1 systemd[1]: Stopped The nginx HTTP and reverse proxy server.
+Oct 20 11:35:08 weblan2tp1 systemd[1]: Starting The nginx HTTP and reverse proxy server...
+Oct 20 11:35:08 weblan2tp1 nginx[1608]: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+Oct 20 11:35:08 weblan2tp1 nginx[1608]: nginx: configuration file /etc/nginx/nginx.conf test is successful
+Oct 20 11:35:08 weblan2tp1 systemd[1]: Started The nginx HTTP and reverse proxy server.
+```
+```
+[axel@weblan2tp1 ~]$ sudo firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: enp0s8
+  sources: 
+  services: cockpit dhcpv6-client ssh
+  ports: 80/tcp
+  protocols: 
+  forward: yes
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules: 
+```
+```
+[axel@weblan2tp1 ~]$ ss -alntp
+State                       Recv-Q                      Send-Q                                           Local Address:Port                                             Peer Address:Port                      Process                      
+LISTEN                      0                           128                                                    0.0.0.0:22                                                    0.0.0.0:*                                                      
+LISTEN                      0                           511                                                    0.0.0.0:80                                                    0.0.0.0:*                                                      
+LISTEN                      0                           128                                                       [::]:22                                                       [::]:*                                                      
+LISTEN                      0                           511                                                       [::]:80
+```
 
 ☀️ **Sur `node1.lan1.tp2`**
 
-- éditez le fichier `hosts` pour que `site_nul.tp2` pointe vers l'IP de `web.lan2.tp2`
-- visitez le site nul avec une commande `curl` et en utilisant le nom `site_nul.tp2`
-
-![That's all folks](./img/thatsall.jpg)
+```
+[axel@node1lan1tp1 ~]$ sudo cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.1.2.12   site_nul.tp2
+```
+```
+[axel@node1lan1tp1 ~]$ curl site_nul.tp2
+<h1>Ceci est un site nul</h1>
+<h2>Vraiment nul</h2>
+```
