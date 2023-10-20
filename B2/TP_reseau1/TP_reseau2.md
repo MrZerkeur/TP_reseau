@@ -42,65 +42,70 @@ traceroute to 10.1.2.12 (10.1.2.12), 30 hops max, 60 byte packets
 ```
 # II. Interlude accès internet
 
-![No internet](./img/no%20internet.jpg)
-
-**On va donner accès internet à tout le monde.** Le routeur aura un accès internet, et permettra à tout le monde d'y accéder : il sera la passerelle par défaut des membres du LAN1 et des membres du LAN2.
-
-**Ajoutez une carte NAT au routeur pour qu'il ait un accès internet.**
-
 ☀️ **Sur `router.tp2`**
 
 - prouvez que vous avez un accès internet (ping d'une IP publique)
+```
+[axel@routertp1 ~]$ ping 172.67.74.226
+PING 172.67.74.226 (172.67.74.226) 56(84) bytes of data.
+64 bytes from 172.67.74.226: icmp_seq=1 ttl=63 time=70.7 ms
+^C
+--- 172.67.74.226 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 70.745/70.745/70.745/0.000 ms
+```
 - prouvez que vous pouvez résoudre des noms publics (ping d'un nom de domaine public)
+```
+[axel@routertp1 ~]$ ping google.com
+PING google.com (142.250.179.78) 56(84) bytes of data.
+64 bytes from par21s19-in-f14.1e100.net (142.250.179.78): icmp_seq=1 ttl=63 time=23.4 ms
+^C
+--- google.com ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 23.408/23.408/23.408/0.000 ms
+```
 
 ☀️ **Accès internet LAN1 et LAN2**
 
-- ajoutez une route par défaut sur les deux machines du LAN1
-- ajoutez une route par défaut sur les deux machines du LAN2
-- configurez l'adresse d'un serveur DNS que vos machines peuvent utiliser pour résoudre des noms
-- dans le compte-rendu, mettez-moi que la conf des points précédents sur `node2.lan1.tp2`
-- prouvez que `node2.lan1.tp2` a un accès internet :
-  - il peut ping une IP publique
-  - il peut ping un nom de domaine public
+
+```
+[axel@node2lan1tp1 ~]$ cat /etc/sysconfig/network-scripts/route-enp0s8
+default via 10.1.1.254 dev enp0s8
+```
+```
+[axel@node2lan1tp1 ~]$ cat /etc/resolv.conf 
+nameserver 8.8.8.8
+```
+```
+[axel@node2lan1tp1 ~]$ ping 172.67.74.226
+PING 172.67.74.226 (172.67.74.226) 56(84) bytes of data.
+64 bytes from 172.67.74.226: icmp_seq=1 ttl=61 time=20.6 ms
+64 bytes from 172.67.74.226: icmp_seq=2 ttl=61 time=15.7 ms
+^C
+--- 172.67.74.226 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 15.666/18.137/20.609/2.471 ms
+```
+```
+[axel@node2lan1tp1 ~]$ ping google.com
+PING google.com (142.250.74.238) 56(84) bytes of data.
+64 bytes from par10s40-in-f14.1e100.net (142.250.74.238): icmp_seq=1 ttl=61 time=13.6 ms
+64 bytes from par10s40-in-f14.1e100.net (142.250.74.238): icmp_seq=2 ttl=61 time=14.1 ms
+^C
+--- google.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 13.570/13.815/14.060/0.245 ms
+```
 
 # III. Services réseau
 
-**Adresses IP et routage OK, maintenant, il s'agirait d'en faire quelque chose nan ?**
-
-Dans cette partie, on va **monter quelques services orientés réseau** au sein de la topologie, afin de la rendre un peu utile que diable. Des machines qui se `ping` c'est rigolo mais ça sert à rien, des machines qui font des trucs c'est mieux.
-
 ## 1. DHCP
-
-![Dora](./img/dora.jpg)
-
-Petite **install d'un serveur DHCP** dans cette partie. Par soucis d'économie de ressources, on recycle une des machines précédentes : `node2.lan1.tp2` devient `dhcp.lan1.tp2`.
-
-**Pour rappel**, un serveur DHCP, on en trouve un dans la plupart des LANs auxquels vous vous êtes connectés. Si quand tu te connectes dans un réseau, tu n'es pas **obligé** de saisir une IP statique à la mano, et que t'as un accès internet wala, alors il y a **forcément** un serveur DHCP dans le réseau qui t'a proposé une IP disponible.
-
-> Le serveur DHCP a aussi pour rôle de donner, en plus d'une IP disponible, deux informations primordiales pour l'accès internet : l'adresse IP de la passerelle du réseau, et l'adresse d'un serveur DNS joignable depuis ce réseau.
-
-**Dans notre TP, son rôle sera de proposer une IP libre à toute machine qui le demande dans le LAN1.**
-
-> Vous pouvez vous référer à [ce lien](https://www.server-world.info/en/note?os=Rocky_Linux_8&p=dhcp&f=1) ou n'importe quel autre truc sur internet (je sais c'est du Rocky 8, m'enfin, la conf de ce serveur DHCP ça bouge pas trop).
-
----
-
-Pour ce qui est de la configuration du serveur DHCP, quelques précisions :
-
-- vous ferez en sorte qu'il propose des adresses IPs entre `10.1.1.100` et `10.1.1.200`
-- vous utiliserez aussi une option DHCP pour indiquer aux clients que la passerelle du réseau est `10.1.1.254` : le routeur
-- vous utiliserez aussi une option DHCP pour indiquer aux clients qu'un serveur DNS joignable depuis le réseau c'est `1.1.1.1`
-
----
 
 ☀️ **Sur `dhcp.lan1.tp2`**
 
-- n'oubliez pas de renommer la machine (`node2.lan1.tp2` devient `dhcp.lan1.tp2`)
-- changez son adresse IP en `10.1.1.253`
-- setup du serveur DHCP
-  - commande d'installation du paquet
-  - fichier de conf
-  - service actif
+```
+[axel@dhcplan1tp1 ~]$ sudo dnf install dhcp-server -y
+```
 
 ☀️ **Sur `node1.lan1.tp2`**
 
