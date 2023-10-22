@@ -191,28 +191,15 @@ Nmap done: 256 IP addresses (5 hosts up) scanned in 4.50 seconds
 
 # III. Le requin
 
-Faites chauffer Wireshark. Pour chaque point, je veux que vous me livrez une capture Wireshark, format `.pcap` donc.
-
-Faites *clean* 🧹, vous êtes des grands now :
-
-- livrez moi des captures réseau avec uniquement ce que je demande et pas 40000 autres paquets autour
-  - vous pouvez sélectionner seulement certains paquets quand vous enregistrez la capture dans Wireshark
-- stockez les fichiers `.pcap` dans le dépôt git et côté rendu Markdown, vous me faites un lien vers le fichier, c'est cette syntaxe :
-
-```markdown
-[Lien vers capture ARP](./captures/arp.pcap)
-```
-
----
-
 ☀️ **Capture ARP**
 
 - 📁 fichier `arp.pcap`
 - capturez un échange ARP entre votre PC et la passerelle du réseau
 
-> Si vous utilisez un filtre Wireshark pour mieux voir ce trafic, précisez-le moi dans le compte-rendu.
-
----
+[Capture ARP](./arp.pcapng)
+```
+Filtre : arp
+```
 
 ☀️ **Capture DNS**
 
@@ -220,9 +207,13 @@ Faites *clean* 🧹, vous êtes des grands now :
 - capturez une requête DNS vers le domaine de votre choix et la réponse
 - vous effectuerez la requête DNS en ligne de commande
 
-> Si vous utilisez un filtre Wireshark pour mieux voir ce trafic, précisez-le moi dans le compte-rendu.
-
----
+[Capture DNS](./dns.pcapng)
+```
+[axel@fedora ~]$ host www.ynov.com
+```
+```
+Filtre : dns
+```
 
 ☀️ **Capture TCP**
 
@@ -233,10 +224,7 @@ Faites *clean* 🧹, vous êtes des grands now :
   - un peu de trafic
   - la fin de la connexion TCP
 
-> Si vous utilisez un filtre Wireshark pour mieux voir ce trafic, précisez-le moi dans le compte-rendu.
-
----
-
-![Packet sniffer](img/wireshark.jpg)
-
-> *Je sais que je vous l'ai déjà servi l'an dernier lui, mais j'aime trop ce meme hihi 🐈*
+[Capture TCP](./tcp.pcapng)
+```
+Filtre : tcp
+```
