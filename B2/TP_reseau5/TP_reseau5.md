@@ -152,9 +152,9 @@ tcp   LISTEN 0      128             [::]:22            [::]:*    users:(("sshd",
 
 🌞 **Proposer une remédiation dév**
 
-Le code utilise la fonction eval qui execute l'input du user, ce qui est très dangereux.
+J'ai modifié le code pour ne plus utiliser la fonction eval et vérifier l'input utilisateur.
 
-On pourrait à la place utiliser une autre fonction ou la créer soit même qui effectue le calcul.
+Voici le [code](./serveur_modified.py)
 
 🌞 **Proposer une remédiation système**
 
@@ -167,7 +167,6 @@ Il faudrait créer un user spécial pour le serveur qui a uniquement les droits 
 
 Aussi ça pourrait être sympa de faire tourner tout ça dans un docker container.
 
-Enfin on peut empêcher les connexions sortantes en paramétrant le firewall avec cette commande par exemple :
-```
-sudo firewall-cmd --permanent --direct --add-rule ipv4 filter OUTPUT 0 -j DROP
-```
+[Ici](./Dockerfile) un exemple de Dockerfile.
+
+[Et ici](./docker-compose.yml) un exemple de docker compose.
