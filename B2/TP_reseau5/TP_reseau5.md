@@ -156,6 +156,15 @@ J'ai modifié le code pour ne plus utiliser la fonction eval et vérifier l'inpu
 
 Voici le [code](./serveur_modified.py)
 
+Ici il y a une regex qui cherche une expression regulière (comme la version client initialement) et j'ai fais une mini calculatrice pour remplacer eval.
+On gagne donc en sécurité mais perds la possibilité d'ajouter d'autres opérations facilement.
+
+Une autre version du [code](./serveur_modifiedv2.py)
+
+Qui lui re utilise la fonction eval.
+
+Ici il y a seulement la même regex.
+
 🌞 **Proposer une remédiation système**
 
 Le user qui fait tourner le serveur est root.
