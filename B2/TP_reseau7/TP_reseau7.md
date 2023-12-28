@@ -284,119 +284,115 @@ rtt min/avg/max/mdev = 2.960/2.960/2.960/0.000 ms
 
 🌞 **Générez des confs Wireguard pour tout le monde**
 
-
-## 2. Bastion
-
 ```
-[axel@martinetp7secu wireguard]$ sudo firewall-cmd --permanent --new-zone=ssh-limited
-[sudo] password for axel: 
-success
-[axel@martinetp7secu wireguard]$ sudo firewall-cmd --permanent --zone=ssh-limited --add-source=10.7.1.12
-success
-[axel@martinetp7secu wireguard]$ sudo firewall-cmd --permanent --zone=ssh-limited --add-service=ssh
-success
-[axel@martinetp7secu wireguard]$ sudo firewall-cmd --permanent --remove-service=ssh
-success
+[root@vpntp7secu wireguard]# cat wg0.conf 
+[Interface]
+Address = 10.7.2.0/24
+SaveConfig = false
+PostUp = firewall-cmd --zone=public --add-masquerade
+PostUp = firewall-cmd --add-interface=wg0 --zone=public
+PostDown = firewall-cmd --zone=public --remove-masquerade
+PostDown = firewall-cmd --remove-interface=wg0 --zone=public
+ListenPort = 13337
+PrivateKey = AKY2vzRHA2636Kwtoie+4zCa7cMWqpeeEYdl3s2nDHI=
 
-sudo firewall-cmd --add-interface=web --zone=ssh-limited --permanent
-sucess
-[axel@martinetp7secu wireguard]$ sudo firewall-cmd --reload
-success
+[Peer]
+PublicKey = aDWi8gZMpcsVy0o0nBFW/tWzpq4Go+rc5rVYIV3I/lA=
+AllowedIPs = 10.7.2.11/32
 
-[axel@webtp7secu ~]$ sudo firs82en#
-ewall-cmd --list-all --zone=ssh-limited
-[sudo] password for axel: 
-ssh-limited (active)
-  target: default
-  icmp-block-inversion: no
-  interfaces: web
-  sources: 10.7.2.12 10.7.1.12
-  services: ssh
-  ports: 
-  protocols: 
-  forward: no
-  masquerade: no
-  forward-ports: 
-  source-ports: 
-  icmp-blocks: 
-  rich rules:
+[Peer]
+PublicKey = t7fgwKT0OUv0L7+x8uUWr4vvjqBqP3WB5p102TIzwBs=
+AllowedIPs = 10.7.2.12/32
 
-[axel@fedora ~]$ ssh axel@10.7.1.13
-ssh: connect to host 10.7.1.13 port 22: No route to host
-
-[axel@bastiontp7secu wireguard]$ ssh axel@10.7.1.13
-axel@10.7.1.13's password: 
-Last login: Thu Dec 14 22:27:45 2023 from 10.7.1.12
-[axel@webtp7secu ~]$
-
-[axel@fedora wireguard]$ ssh -J axel@10.7.2.12 axel@10.7.2.13
-axel@10.7.2.12's password: 
-axel@10.7.2.13's password: 
-Last login: Fri Dec 15 00:02:48 2023 from 10.7.2.0
-[axel@webtp7secu ~]$
+[Peer]
+PublicKey = suDW25yuU8DLDWs7KhiFYmem52GNB58IWG8IXORaeg4=
+AllowedIPs = 10.7.2.13/32
 ```
-
-
-
-
-On va décider que la machine `bastion.tp7.secu` est notre bastion SSH : si on veut se connecter à n'importe quel serveur en SSH, on doit passer par lui.
-
-Par exemple, si on essaie de se connecter à `web.tp7.secu` en direct sur l'IP `10.7.2.13/24`, il dois nous jeter.
-
-En revanche, si on se connecte d'abord à `bastion.tp7.secu`, puis on se connecte à `web.tp7.secu`, alors là ça fonctionne.
-
-On peut faire ça en une seule commande SSH en utilisant la feature de jump SSH. Littéralement : on rebondit sur une machine avant d'arriver sur une autre. Comme ça :
-
-```bash
-# on remplace
-ssh bastion.tp7.secu
-# puis, une fois connecté :
-ssh web.tp7.secu
-
-# paaaar une seule commande directe :
-
-# avec les noms
-ssh -j bastion.tp7.secu web.tp7.secu
-# avec les IPs
-ssh -j 10.7.2.12 10.7.2.13
 ```
+[axel@martinetp7secu wireguard]$ cat martine.conf 
+[Interface]
+Address = 10.7.2.11/24
+PrivateKey = 2HZTdPBsJJf9jY/x6ulq5BSSp/1oz01Xs3vygwCIXUs=
 
-🌞 **Empêcher la connexion SSH directe sur `web.tp7.secu`**
+[Peer]
+PublicKey = guqQG0iSUgjubmqU91FcHmrwyBV+AdRM1eFqlNn/4Ho=
+AllowedIPs = 0.0.0.0/0
+Endpoint = 10.7.1.100:13337
+```
+```
+[axel@bastiontp7secu wireguard]$ cat bastion.conf 
+[Interface]
+Address = 10.7.2.12/24
+PrivateKey = 8FeUbo7YPl/VXiWgiZQFKd3d6RGUdghzAw79dwvgCXk=
 
-- on autorise la connexion SSH que si elle vient de `bastion.tp7.secu`
-- avec le firewall : on bloque le trafic à destination du port 22 s'il ne vient pas de `10.7.2.12`
-- prouvez que ça fonctionne
-  - que le trafic est bien bloqué en direct
-  - mais qu'on peut y accéder depuis `bastion.tp7.secu`
+[Peer]
+PublicKey = guqQG0iSUgjubmqU91FcHmrwyBV+AdRM1eFqlNn/4Ho=
+AllowedIPs = 0.0.0.0/0
+Endpoint = 10.7.1.100:13337
+```
+```
+[axel@webtp7sec wireguard]$ cat web.conf 
+[Interface]
+Address = 10.7.2.13/24
+PrivateKey = UDMzWHSIHVZ/a/s0ijsc2piBlcbjAbeNxD16crD2FUM=
 
-🌞 **Connectez-vous avec un jump SSH**
+[Peer]
+PublicKey = guqQG0iSUgjubmqU91FcHmrwyBV+AdRM1eFqlNn/4Ho=
+AllowedIPs = 0.0.0.0/0
+Endpoint = 10.7.1.100:13337
+```
+Oui les clés ont changé, c'est parce que j'ai perdu mes VM et j'ai donc dû refaire le début du TP x)
 
-- en une seule commande, vous avez un shell sur `web.tp7.secu`
-
-> Désormais, le bastion centralise toutes les connexions SSH. Il devient un noeud très important dans la gestion du parc, et permet à lui seul de tracer toutes les connexions SSH effectuées.
 
 ## 3. Connexion par clé
 
 🌞 **Générez une nouvelle paire de clés pour ce TP**
 
-- vous les utiliserez pour vous connecter aux machines
-- vous n'utiliserez **PAS** l'algorithme RSA
-- faites des recherches pour avoir l'avis de gens qualifiés sur l'algo à choisir en 2023 pour avoir la "meilleure" clé (sécurité et perfs)
+```
+ssh-keygen -t ed25519 -a 200 -f martine
+```
+
+ed25519 est un nouvel algorithme plus sécurisé et plus rapide que RSA, on précise -a 200 pour rendre la clé plus difficile à cracker mais dépasser 200 devient exponentiellement plus long inutilement.
+
+```
+ssh-copy-id -i martine.pub axel@10.7.1.11
+```
 
 ## 4. Conf serveur SSH
 
 🌞 **Changez l'adresse IP d'écoute**
 
-- sur toutes les machines
-- vos serveurs SSH ne doivent être disponibles qu'au sein du réseau VPN
-- prouvez que vous ne pouvez plus accéder à une sesion SSH en utilisant l'IP host-only (obligé de passer par le VPN)
+Mon ordinateur qui n'a pas le VPN ne peut pas se connecter :
+```
+axel@debian:~$ ssh axel@10.7.1.11
+ssh: connect to host 10.7.1.11 port 22: Connection refused
+```
+
+Mais le bastion qui lui est dans le VPN peut :
+```
+[axel@bastiontp7secu ~]$ ssh axel@10.7.2.11
+axel@10.7.2.11's password: 
+Last login: Sun Dec 24 10:44:54 2023 from 10.7.2.0
+```
+
+J'ai ajouté cette ligne dans la conf du SSH (par exemple ici sur martine):
+```
+ListenAddress 10.7.2.11
+```
 
 🌞 **Améliorer le niveau de sécurité du serveur**
 
-- sur toutes les machines
-- mettre en oeuvre au moins 3 configurations additionnelles pour améliorer le niveau de sécurité
-- 3 lignes (au moins) à changer quoi
-- le doc est vieux, mais en dehors des recommendations pour le chiffrement le reste reste très cool : [l'ANSSI avait édité des recommendations pour une conf OpenSSH](https://cyber.gouv.fr/publications/openssh-secure-use-recommendations)
+Changements :
+```
+PermitEmptyPasswords no
+PermitRootLogin no
+PrintLastLog yes
+AllowTcpForwarding no
+X11Forwarding no
+LoginGraceTime 30
+PermitUserEnvironment no
+UsePrivilegeSeparation yes
+```
 
 # III. HTTP
 
